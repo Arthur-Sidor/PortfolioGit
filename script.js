@@ -464,3 +464,78 @@ const debouncedScrollHandler = debounce(function() {
 }, 10);
 
 window.addEventListener('scroll', debouncedScrollHandler);
+
+// Função para buscar projetos do GitHub
+async function fetchGitHubProjects() {
+    const projectsContainer = document.getElementById('github-projects');
+    
+    try {
+        const response = await fetch('https://api.github.com/users/Arthur-Sidor/repos?sort=updated&direction=desc');
+        const repos = await response.json();
+        
+        // Filtra repositórios que não são forks e não estão arquivados
+        const filteredRepos = repos.filter(repo => 
+            !repo.fork && !repo.archived && repo.name !== 'Arthur-Sidor'
+        );
+        
+        // Limpa o loader
+        projectsContainer.innerHTML = '';
+        
+        // Adiciona cada repositório como um projeto
+        filteredRepos.forEach(repo => {
+            const projectCard = document.createElement('div');
+            projectCard.className = 'project-card';
+            
+            // Determina a linguagem ou usa padrão
+            const language = repo.language || 'Code';
+            
+            projectCard.innerHTML = `
+                <div class="project-image">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div class="project-content">
+                    <h3>${repo.name.replace(/-/g, ' ').replace(/_/g, ' ')}</h3>
+                    <p>${repo.description || 'Projeto sem descrição disponível.'}</p>
+                    <div class="project-techs">
+                        <span>${language}</span>
+                        ${repo.topics && repo.topics.length > 0 ? 
+                    repo.topics.slice(0, 3).map(topic => `<span>${topic}</span>`).join('') : 
+                    ''}
+                    </div>
+                    <div class="project-links">
+                        ${repo.homepage ? 
+                    `<a href="${repo.homepage}" target="_blank" class="btn btn-primary">Ver Demo</a>` : 
+                    ''}
+                        <a href="${repo.html_url}" target="_blank" class="btn btn-secondary">Ver Código</a>
+                    </div>
+                </div>
+            `;
+            
+            projectsContainer.appendChild(projectCard);
+        });
+        
+        // Se não houver repositórios
+        if (filteredRepos.length === 0) {
+            projectsContainer.innerHTML = `
+                <div class="no-projects">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>Nenhum projeto encontrado no GitHub.</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Erro ao buscar projetos:', error);
+        projectsContainer.innerHTML = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Erro ao carregar projetos do GitHub. Por favor, tente novamente mais tarde.</p>
+                <a href="https://github.com/Arthur-Sidor" target="_blank" class="btn btn-primary">
+                    Ver GitHub
+                </a>
+            </div>
+        `;
+    }
+}
+
+// Chama a função quando a página carrega
+document.addEventListener('DOMContentLoaded', fetchGitHubProjects);
